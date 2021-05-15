@@ -1,0 +1,48 @@
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+#main {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(8, 0fr);
+}
+
+.clickable_tile {
+  height: 100%;
+  width: 100%;
+  cursor: pointer;
+}
+
+#p1,
+#p2 {
+  cursor: pointer;
+}
+
+.field {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  width: 200px;
+  height: 200px;
+  border: 1px solid black;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  background-color: grey;
+}
+
+.blank {
+  border: none;
+  display: grid;
+  grid-template-columns: repeat(3, 0fr);
+  background-color: transparent;
+  margin-left: 2px;
+}
