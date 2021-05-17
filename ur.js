@@ -296,12 +296,18 @@ let rolledNumber = 0;
 //ZA IGRACA 1
 for (let [i, t] of p1_tokens.entries()) {
   t.token.addEventListener("click", () => {
-    //console.log(t.token.id);
+    clearGreen(fields);
+    for (let other of p1_tokens) {
+      if (other != t) {
+        other.isClicked = false;
+      }
+    }
+
+    for (let oppponent of p2_tokens) {
+      oppponent.token.disabled = true;
+    }
 
     t.isClicked = true;
-    //console.log(t.isClicked);
-
-    fields[i].field.style.backgroundColor = "#efefef";
     colorAvailableMove(beginingField_p1, t, fields);
   });
 }
@@ -309,10 +315,14 @@ for (let [i, t] of p1_tokens.entries()) {
 //ZA IGRACA 2
 for (let [i, t] of p2_tokens.entries()) {
   t.token.addEventListener("click", () => {
-    //console.log(t.token.id);
+    clearGreen(fields_p2);
+    for (let other of p2_tokens) {
+      if (other != t) {
+        t.isClicked = false;
+      }
+    }
 
     t.isClicked = true;
-    //console.log(t.isClicked);
 
     colorAvailableMove(beginingField_p2, t, fields_p2);
   });
@@ -335,24 +345,60 @@ roll_btn.addEventListener("click", () => {
 
   if (isP1sTurn) {
     for (let t of p1_tokens) {
+      for (let oppponent of p2_tokens) {
+        oppponent.token.disabled = true;
+      }
+      t.token.disabled = false;
+      clearGreen(fields_p2);
       const index = beginingField_p1.contains(t.token)
         ? rolledNumber - 1
         : findTokenOnTileIndex(fields, t.token) + rolledNumber;
 
-      move(rolledNumber, fields, t, beginingField_p1, index);
-      //calculateOddOfTaking(fields, t.token, p2_tokens);
+      move(
+        rolledNumber,
+        fields,
+        t,
+        beginingField_p1,
+        index,
+        p2_tokens,
+        beginingField_p2
+      );
+
+      if (index >= fields.length) {
+        console.log("Presisalo  ");
+        return;
+      }
+      takeCheck(fields, p2_tokens, index);
 
       isP1sTurn = false;
       t.isClicked = false;
     }
   } else {
     for (let t of p2_tokens) {
+      for (let oppponent of p1_tokens) {
+        oppponent.token.disabled = true;
+      }
+      t.token.disabled = false;
+      clearGreen(fields);
       const index = beginingField_p2.contains(t.token)
         ? rolledNumber - 1
         : findTokenOnTileIndex(fields_p2, t.token) + rolledNumber;
 
-      move(rolledNumber, fields_p2, t, beginingField_p2, index);
-      //calculateOddOfTaking(fields_p2, t.token, p1_tokens);
+      move(
+        rolledNumber,
+        fields_p2,
+        t,
+        beginingField_p2,
+        index,
+        p1_tokens,
+        beginingField_p1
+      );
+
+      if (index >= fields_p2.length) {
+        console.log("Presisalo  ");
+        return;
+      }
+      takeCheck(fields, p1_tokens, index);
 
       isP1sTurn = true;
       t.isClicked = false;
@@ -370,62 +416,67 @@ calcButton.addEventListener("click", () => {
 });
 
 //FUNKCIJA ZA MRDANJE JELTE (prilagodi je za vise ovih tokena)
-function move(rolledNumber, fields, t, beginningField, index) {
-  let previous_index = 0;
+function move(
+  rolledNumber,
+  fields,
+  t,
+  beginningField,
+  index,
+  tokensToTake,
+  opponentBeginningField
+) {
+  try {
+    let previous_index = 0;
 
-  if (index >= fields.length) {
-    return;
-  }
+    fields[index].field.addEventListener("click", (e) => {
+      if (t.isClicked) {
+        fields[index].field.style.backgroundColor = "#efefef";
+        t.isClicked = false;
+        fields[index].field.disabled = true;
+        beginningField.contains(t.token)
+          ? beginningField.removeChild(t.token)
+          : null;
+        fields[index].field.appendChild(t.token);
+        previous_index = index - rolledNumber;
+        previous_index !== -1
+          ? (fields[previous_index].field.disabled = false)
+          : null;
 
-  //takeCheck(fields, t.token, index, beginingField_p2);
+        //Vidi da popravis to sto se disableuje kad dodje do kraja
+        //Sigurno je zato sto presisa indeks pa ga odma izbaci i ne dodje ovdje da setuje prethodni uopste
+        //Popravljeno lmao
 
-  // console.log("FIELDS OF INDEX IN MOVE FUNCTION HERE <--------------");
-  // console.log(fields[index]);
-
-  fields[index].field.addEventListener("click", (e) => {
-    if (t.isClicked) {
-      fields[index].field.style.backgroundColor = "#efefef";
-      t.isClicked = false;
-      fields[index].field.disabled = true;
-      beginningField.contains(t.token)
-        ? beginningField.removeChild(t.token)
-        : null;
-      fields[index].field.appendChild(t.token);
-      previous_index = index - rolledNumber;
-      previous_index !== -1
-        ? (fields[previous_index].field.disabled = false)
-        : null;
-      //console.log("PREV INDEX: " + previous_index);
-
-      //Je li rozeta
-      if (fields[index].rosette) {
-        console.log("Jeste rozeta");
-        if (isP1sTurn) {
-          whoseTurn.innerHTML = "white's";
-          isP1sTurn = false;
-        } else {
-          whoseTurn.innerHTML = "black's";
-          isP1sTurn = true;
+        //Je li rozeta
+        if (fields[index].rosette) {
+          console.log("Jeste rozeta");
+          if (isP1sTurn) {
+            whoseTurn.innerHTML = "white's";
+            isP1sTurn = false;
+          } else {
+            whoseTurn.innerHTML = "black's";
+            isP1sTurn = true;
+          }
         }
-      }
 
-      for (let i = 0; i < fields.length; i++) {
-        if (i !== fields.length - 1) {
-          fields[i].field.style.backgroundColor = "#efefef";
+        //Pozderi protivnika
+        const [token, isTaken] = takeCheck(fields, tokensToTake, index);
+        if (isTaken) {
+          opponentBeginningField.appendChild(token);
         }
+
+        clearGreen(fields);
+        isP1sTurn
+          ? (whoseTurn.innerHTML = "black's")
+          : (whoseTurn.innerHTML = "white's");
+
+        roll_display.innerHTML = "";
+        probabilityDisplay.innerHTML = "";
       }
-
-      isP1sTurn
-        ? (whoseTurn.innerHTML = "black's")
-        : (whoseTurn.innerHTML = "white's");
-
-      roll_display.innerHTML = "";
-      probabilityDisplay.innerHTML = "";
-    }
-  });
+    });
+  } catch (error) {}
 }
 
-//Funkcija za uzimanje kruzica ce gledat ciji je potez i ako je suprotan kruzic na sljedecem polju onda ga pojede
+//Funkcija za uzimanje kruzica ce gledat ciji je potez i ako je suprotan kruzic na sljedecem polju onda ga pojede <--sta?
 //Radi u svakom slucaju, ne mora se prilagodjavat za vise
 function findTokenOnTileIndex(fields, token) {
   for (let i = 0; i < fields.length; i++) {
@@ -443,32 +494,38 @@ function findTokenOnTileId(fields, token) {
   }
 }
 
-function colorAvailableMove(beginningField, t, fields) {
-  let previous_index = 0;
-  const index = beginningField.contains(t.token)
-    ? rolledNumber - 1
-    : findTokenOnTileIndex(fields, t.token) + rolledNumber;
-
-  const tokenOnFieldId = fields[index].field.getElementsByTagName("*")[0]?.id;
-  if (fields[index].field.contains(t.token)) {
-    console.log("Ima token na ovome");
+function clearGreen(fields) {
+  for (let i = 0; i < fields.length; i++) {
+    if (i !== fields.length - 1) {
+      fields[i].field.style.backgroundColor = "#efefef";
+    }
   }
+}
 
-  fields[index].field.style.backgroundColor = "green";
-  fields[previous_index].field.style.backgroundColor = "#efefef";
+function colorAvailableMove(beginningField, t, fields) {
+  try {
+    const index = beginningField.contains(t.token)
+      ? rolledNumber - 1
+      : findTokenOnTileIndex(fields, t.token) + rolledNumber;
+
+    if (fields[index].field.contains(t.token)) {
+      console.log("Ima token na ovome");
+    }
+
+    fields[index].field.style.backgroundColor = "green";
+  } catch (error) {}
 }
 
 //Ovo pogledaj jos jedno 3, 4 puta
-function takeCheck(fields, targetToken, index, beginningField) {
-  const tokenOnFieldId = findTokenOnTileId(fields, targetToken);
-
-  if (
-    fields[index].field.contains(targetToken)
-    //tokenOnFieldId === targetToken.id
-  ) {
-    console.log("POJEO");
-    beginningField.appendChild(targetToken);
+//
+function takeCheck(fields, tokensToTake, index) {
+  for (let t of tokensToTake) {
+    if (fields[index].field.contains(t.token)) {
+      fields[index].field.disabled = false;
+      return [t.token, true];
+    }
   }
+  return [null, false];
 }
 
 //Utvrdi gdje je trenutni token ✓
@@ -492,9 +549,10 @@ function takeCheck(fields, targetToken, index, beginningField) {
 //Ovo naravno vazi i pored regularne sanse da ga uzme
 //Samim tim bi trebao da saberem sansu za rozetu sa sansom bez rozete
 
+//2497,42 <--Mau broj
+
 //OVA FUNKCIJA NE VALJA NISTA STO SE OPTIMIZACIJE TICE ALI KOGA BRIGA LMAO (popravi ako se bude bilo vremena)
 function calculateOddOfTaking(fields, takerTokenArray, targetTokenArray) {
-  const _0probability = 1 / 16;
   const _1probability = 4 / 16;
   const _2probability = 6 / 16;
   const _3probability = 4 / 16;
@@ -504,7 +562,7 @@ function calculateOddOfTaking(fields, takerTokenArray, targetTokenArray) {
   const rosetteIndex_2 = 7;
 
   for (let t of takerTokenArray) {
-    let totalProbabilityPercent = 0;
+    let rosetteProbability = 0;
     let valueToTake = 0;
     let probabilityToTake = 0;
     const tokenIndex =
@@ -514,6 +572,7 @@ function calculateOddOfTaking(fields, takerTokenArray, targetTokenArray) {
     const tokenOnFieldId = findTokenOnTileId(fields, t.token);
 
     const targetTokenIndexArray = [];
+    const targetTokenIDArray = [];
 
     for (let i = 0; i < targetTokenArray.length; i++) {
       const targetTokenIndex = findTokenOnTileIndex(
@@ -523,83 +582,65 @@ function calculateOddOfTaking(fields, takerTokenArray, targetTokenArray) {
 
       if (typeof targetTokenIndex !== "undefined") {
         targetTokenIndexArray.push(targetTokenIndex);
+        targetTokenIDArray.push(
+          findTokenOnTileId(fields, targetTokenArray[i].token)
+        );
       }
     }
 
-    for (let i of targetTokenIndexArray) {
-      console.log("Target token index: " + i);
-      if (tokenIndex > i) {
+    for (let [position, index] of targetTokenIndexArray.entries()) {
+      console.log("Target token index: " + index);
+      if (tokenIndex > index) {
         return;
       }
-      valueToTake = i - tokenIndex;
+      valueToTake = index - tokenIndex;
       probabilityToTake = 0;
       switch (valueToTake) {
-        case 0:
-          probabilityToTake = _0probability;
-          break;
         case 1:
           probabilityToTake = _1probability;
+          rosetteProbability = takeViaRosette(
+            index,
+            tokenIndex,
+            rosetteIndex_1,
+            rosetteIndex_2
+          );
           break;
         case 2:
           probabilityToTake = _2probability;
+          rosetteProbability = takeViaRosette(
+            index,
+            tokenIndex,
+            rosetteIndex_1,
+            rosetteIndex_2
+          );
           break;
         case 3:
           probabilityToTake = _3probability;
+          rosetteProbability = takeViaRosette(
+            index,
+            tokenIndex,
+            rosetteIndex_1,
+            rosetteIndex_2
+          );
           break;
         case 4:
           probabilityToTake = _4probability;
+          rosetteProbability = takeViaRosette(
+            index,
+            tokenIndex,
+            rosetteIndex_1,
+            rosetteIndex_2
+          );
           break;
 
         default:
-          {
-            if (i > rosetteIndex_1 && i < rosetteIndex_2) {
-              if (tokenIndex < rosetteIndex_1) {
-                const distanceToRosette = rosetteIndex_1 - tokenIndex;
-                const probabilityToRosette = probabilities(distanceToRosette);
+          rosetteProbability = takeViaRosette(
+            index,
+            tokenIndex,
+            rosetteIndex_1,
+            rosetteIndex_2
+          );
 
-                const distanceFromRosetteToTarget = i - rosetteIndex_1;
-                const probabilityFromRosetteToTarget = probabilities(
-                  distanceFromRosetteToTarget
-                );
-
-                totalProbabilityPercent =
-                  probabilityToRosette * probabilityFromRosetteToTarget * 100;
-              }
-            } else if (i > rosetteIndex_2) {
-              if (tokenIndex < rosetteIndex_1) {
-                const distanceTo1stRosette = rosetteIndex_1 - tokenIndex;
-                const probabilityTo1stRosette =
-                  probabilities(distanceTo1stRosette);
-
-                const ProbabilityFrom1stTo2ndRosette = _4probability;
-
-                const distanceFrom2ndRosetteToTarget = i - rosetteIndex_2;
-                const probabilityFrom2ndRosetteToTarget = probabilities(
-                  distanceFrom2ndRosetteToTarget
-                );
-
-                totalProbabilityPercent =
-                  probabilityTo1stRosette *
-                  ProbabilityFrom1stTo2ndRosette *
-                  probabilityFrom2ndRosetteToTarget *
-                  100;
-              } else if (tokenIndex > rosetteIndex_1) {
-                const distanceTo2ndRosette = rosetteIndex_2 - tokenIndex;
-                const probabilityTo2ndRosette =
-                  probabilities(distanceTo2ndRosette);
-
-                const distanceFrom2ndRosetteToTarget = i - rosetteIndex_2;
-                const probabilityFrom2ndRosetteToTarget = probabilities(
-                  distanceFrom2ndRosetteToTarget
-                );
-
-                totalProbabilityPercent =
-                  probabilityTo2ndRosette *
-                  probabilityFrom2ndRosetteToTarget *
-                  100;
-              }
-            }
-          }
           break;
       }
       console.log("Value needeed to take: " + valueToTake);
@@ -607,24 +648,29 @@ function calculateOddOfTaking(fields, takerTokenArray, targetTokenArray) {
         "Probability of direct taking: " + probabilityToTake * 100 + "%"
       );
       console.log(
-        "Probability to take via rosette: " + totalProbabilityPercent + "%"
+        "Probability to take via rosette: " + rosetteProbability + "%"
       );
       console.log("Token id: " + tokenOnFieldId);
       console.log("Token index: " + tokenIndex);
+
+      console.log(targetTokenIDArray);
+
       console.log(targetTokenIndexArray);
 
       if (tokenIndex == -1) {
-        probabilityDisplay.innerHTML = `Value needeed to take for tokens on start: " ${valueToTake} <br>`;
-        probabilityDisplay.innerHTML += `Probability of direct taking for tokens on start: " ${
-          probabilityToTake * 100
-        }% <br>`;
-        probabilityDisplay.innerHTML += `Probability of taking via rosette for tokens on start: " ${totalProbabilityPercent}%<br><br>`;
+        probabilityDisplay.innerHTML = `Value needeed to take token <strong>${targetTokenIDArray[position]}</strong> for tokens on start: " ${valueToTake} <br>`;
+        probabilityDisplay.innerHTML += `Probability of direct taking token <strong>${
+          targetTokenIDArray[position]
+        }</strong> for tokens on start: " ${probabilityToTake * 100}% <br>`;
+        probabilityDisplay.innerHTML += `Probability of taking token <strong>${targetTokenIDArray[position]}</strong> via rosette for tokens on start: " ${rosetteProbability}%<br><br>`;
       } else {
-        probabilityDisplay.innerHTML += `Value needeed to take for token with ID <strong>${tokenOnFieldId}</strong>: " ${valueToTake}<br>`;
-        probabilityDisplay.innerHTML += `Probability of direct taking for for token with ID <strong>${tokenOnFieldId}</strong>: " ${
+        probabilityDisplay.innerHTML += `Value needeed to take token <strong>${targetTokenIDArray[position]}</strong> for token with ID <strong>${tokenOnFieldId}</strong>: " ${valueToTake}<br>`;
+        probabilityDisplay.innerHTML += `Probability of direct taking token <strong>${
+          targetTokenIDArray[position]
+        }</strong> for for token with ID <strong>${tokenOnFieldId}</strong>: " ${
           probabilityToTake * 100
         }% <br>`;
-        probabilityDisplay.innerHTML += `Probability of direct taking for for token with ID <strong>${tokenOnFieldId}</strong>: " ${totalProbabilityPercent}%<br>`;
+        probabilityDisplay.innerHTML += `Probability of taking token <strong>${targetTokenIDArray[position]}</strong> via rosette for token with ID <strong>${tokenOnFieldId}</strong>: " ${rosetteProbability}%<br><br>`;
       }
     }
   }
@@ -644,6 +690,51 @@ function probabilities(value) {
       return _3probability;
     case 4:
       return _4probability;
+  }
+}
+
+function takeViaRosette(i, tokenIndex, rosetteIndex_1, rosetteIndex_2) {
+  if (i > rosetteIndex_1 && i < rosetteIndex_2) {
+    if (tokenIndex < rosetteIndex_1) {
+      const distanceToRosette = rosetteIndex_1 - tokenIndex;
+      const probabilityToRosette = probabilities(distanceToRosette);
+
+      const distanceFromRosetteToTarget = i - rosetteIndex_1;
+      const probabilityFromRosetteToTarget = probabilities(
+        distanceFromRosetteToTarget
+      );
+
+      return probabilityToRosette * probabilityFromRosetteToTarget * 100;
+    }
+  } else if (i > rosetteIndex_2) {
+    if (tokenIndex < rosetteIndex_1) {
+      const distanceTo1stRosette = rosetteIndex_1 - tokenIndex;
+      const probabilityTo1stRosette = probabilities(distanceTo1stRosette);
+
+      const ProbabilityFrom1stTo2ndRosette = 1 / 16;
+
+      const distanceFrom2ndRosetteToTarget = i - rosetteIndex_2;
+      const probabilityFrom2ndRosetteToTarget = probabilities(
+        distanceFrom2ndRosetteToTarget
+      );
+
+      return (
+        probabilityTo1stRosette *
+        ProbabilityFrom1stTo2ndRosette *
+        probabilityFrom2ndRosetteToTarget *
+        100
+      );
+    } else if (tokenIndex > rosetteIndex_1) {
+      const distanceTo2ndRosette = rosetteIndex_2 - tokenIndex;
+      const probabilityTo2ndRosette = probabilities(distanceTo2ndRosette);
+
+      const distanceFrom2ndRosetteToTarget = i - rosetteIndex_2;
+      const probabilityFrom2ndRosetteToTarget = probabilities(
+        distanceFrom2ndRosetteToTarget
+      );
+
+      return probabilityTo2ndRosette * probabilityFrom2ndRosetteToTarget * 100;
+    }
   }
 }
 
