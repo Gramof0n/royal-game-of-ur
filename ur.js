@@ -280,14 +280,21 @@ let rolledNumber = 0;
 
 //Ako se nalazi na pocetku, sljedecu poziciju slobodno uzmi kao fileds[rolovanBroj]
 //Ako je vec na nekom polju, nadji mu indeks (po IDju vjerovatno), i samo dodaj jos rolovan broj na to
+//OVO GORE JE SAD GENERALNO GOTOVO
+
+//Ofarbaj sve u difolt kad se klikne neki drugi i stavi tom proslom kliknutom isClicked na false
+//Pamti prethodnog van petlje i trpaj ga u neku varijablu
 
 //ZA IGRACA 1
 for (let [i, t] of p1_tokens.entries()) {
   t.token.addEventListener("click", () => {
-    console.log(t.token.id);
+    console.log(p1_tokens[i]);
 
     t.isClicked = true;
     console.log(t.isClicked);
+
+    console.log("POLJE KAD SE KLIKNE SHIT:");
+    console.log(fields[i].field);
 
     colorAvailableMove(beginingField_p1, t, fields);
   });
@@ -377,11 +384,19 @@ function findTileIndex(fields, token) {
 }
 
 function colorAvailableMove(beginningField, t, fields) {
+  let previous_index = 0;
   const index = beginningField.contains(t.token)
     ? rolledNumber - 1
     : findTileIndex(fields, t.token) + rolledNumber;
 
-  const tokenOnFieldId = fields[index].field.getElementsByTagName("*")[0]?.id;
+  previous_index = beginningField.contains(t.token)
+    ? rolledNumber
+    : index + rolledNumber;
+
+  const tokenOnFieldId =
+    typeof fields[index] != "undefined"
+      ? fields[index].field.getElementsByTagName("*")[0]?.id
+      : null;
   console.log("INDEX: " + index);
   console.log("TOKEN ON FIELD ID: " + tokenOnFieldId);
   console.log(
@@ -397,6 +412,7 @@ function colorAvailableMove(beginningField, t, fields) {
   }
 
   fields[index].field.style.backgroundColor = "green";
+  fields[previous_index].field.style.backgroundColor = "#efefef";
 }
 
 //Ovo pogledaj jos jedno 3, 4 puta
