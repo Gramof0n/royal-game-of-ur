@@ -85,9 +85,19 @@
       </div>
     </main>
     <article>
-      <span>It's <span id="whoseTurn"></span> turn</span> <br />
-      <button id="roll">Roll</button>
-      <span>You rolled: <span id="rolled_no"></span></span>
+      <div id="turnDiv">
+        <span>It's <span id="whoseTurn"></span> turn</span>
+      </div>
+      <div id="buttonDiv">
+        <button id="roll">Roll</button>
+        <span>You rolled: <strong id="rolled_no"></strong></span>
+      </div>
+      <div id="probabilityDiv">
+        <button id="calculate_probability">
+          Calculate probability of taking
+        </button>
+        <p id="probability_display"></p>
+      </div>
     </article>
   </body>
   <script src="./ur.js"></script>
