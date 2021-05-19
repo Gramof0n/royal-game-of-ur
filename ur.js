@@ -308,6 +308,7 @@ for (let [i, t] of p1_tokens.entries()) {
     }
 
     t.isClicked = true;
+    console.log(t);
     colorAvailableMove(beginingField_p1, t, fields);
   });
 }
@@ -318,7 +319,7 @@ for (let [i, t] of p2_tokens.entries()) {
     clearGreen(fields_p2);
     for (let other of p2_tokens) {
       if (other != t) {
-        t.isClicked = false;
+        other.isClicked = false;
       }
     }
 
@@ -329,25 +330,24 @@ for (let [i, t] of p2_tokens.entries()) {
 }
 
 //DUGME ZA ROLL (ovdje se generalno zovu funkcije za mrdanje itd itd)
-roll_btn.addEventListener("click", () => {
-  isP1sTurn
-    ? (whoseTurn.innerHTML = "black's")
-    : (whoseTurn.innerHTML = "white's");
+function roll() {
+  roll_btn.addEventListener("click", async () => {
+    roll_display.innerHTML = "";
+    isP1sTurn
+      ? (whoseTurn.innerHTML = "black's")
+      : (whoseTurn.innerHTML = "white's");
 
-  rolledNumber = Math.floor(Math.random() * 5);
-  roll_display.innerHTML = rolledNumber;
+    rolledNumber = Math.floor(Math.random() * 5);
+    roll_display.innerHTML = rolledNumber;
 
-  if (rolledNumber === 0) {
-    isP1sTurn ? (isP1sTurn = false) : (isP1sTurn = true);
-    probabilityDisplay.innerHTML = "";
-    return;
-  }
+    if (rolledNumber === 0) {
+      isP1sTurn ? (isP1sTurn = false) : (isP1sTurn = true);
+      probabilityDisplay.innerHTML = "";
+      return;
+    }
 
-  if (isP1sTurn) {
+    // if (isP1sTurn) {
     for (let t of p1_tokens) {
-      for (let oppponent of p2_tokens) {
-        oppponent.token.disabled = true;
-      }
       t.token.disabled = false;
       clearGreen(fields_p2);
       const index = beginingField_p1.contains(t.token)
@@ -361,7 +361,8 @@ roll_btn.addEventListener("click", () => {
         beginingField_p1,
         index,
         p2_tokens,
-        beginingField_p2
+        beginingField_p2,
+        p1_tokens
       );
 
       if (index >= fields.length) {
@@ -370,42 +371,41 @@ roll_btn.addEventListener("click", () => {
       }
       takeCheck(fields, p2_tokens, index);
 
-      isP1sTurn = false;
+      //isP1sTurn = false;
       t.isClicked = false;
     }
-  } else {
-    for (let t of p2_tokens) {
-      for (let oppponent of p1_tokens) {
-        oppponent.token.disabled = true;
-      }
-      t.token.disabled = false;
-      clearGreen(fields);
-      const index = beginingField_p2.contains(t.token)
-        ? rolledNumber - 1
-        : findTokenOnTileIndex(fields_p2, t.token) + rolledNumber;
+    //}
+    // else {
+    //   for (let t of p2_tokens) {
+    //     t.token.disabled = false;
+    //     clearGreen(fields);
+    //     const index = beginingField_p2.contains(t.token)
+    //       ? rolledNumber - 1
+    //       : findTokenOnTileIndex(fields_p2, t.token) + rolledNumber;
 
-      move(
-        rolledNumber,
-        fields_p2,
-        t,
-        beginingField_p2,
-        index,
-        p1_tokens,
-        beginingField_p1
-      );
+    //     move(
+    //       rolledNumber,
+    //       fields_p2,
+    //       t,
+    //       beginingField_p2,
+    //       index,
+    //       p1_tokens,
+    //       beginingField_p1,
+    //       p2_tokens
+    //     );
 
-      if (index >= fields_p2.length) {
-        console.log("Presisalo  ");
-        return;
-      }
-      takeCheck(fields, p1_tokens, index);
+    //     if (index >= fields_p2.length) {
+    //       console.log("Presisalo  ");
+    //       return;
+    //     }
+    //     takeCheck(fields, p1_tokens, index);
 
-      isP1sTurn = true;
-      t.isClicked = false;
-    }
-  }
-});
-
+    //     isP1sTurn = true;
+    //     t.isClicked = false;
+    //   }
+    // }
+  });
+}
 //Dugme za racunanje vjerovatnoce
 calcButton.addEventListener("click", () => {
   if (isP1sTurn) {
@@ -428,7 +428,12 @@ function move(
   try {
     let previous_index = 0;
 
+    if (index >= fields.length) {
+      return;
+    }
+
     fields[index].field.addEventListener("click", (e) => {
+      console.log(t);
       if (t.isClicked) {
         fields[index].field.style.backgroundColor = "#efefef";
         t.isClicked = false;
@@ -471,9 +476,14 @@ function move(
 
         roll_display.innerHTML = "";
         probabilityDisplay.innerHTML = "";
+
+        isP1sTurn = !isP1sTurn;
       }
     });
-  } catch (error) {}
+  } catch (error) {
+    reject(error);
+    console.error(error);
+  }
 }
 
 //Funkcija za uzimanje kruzica ce gledat ciji je potez i ako je suprotan kruzic na sljedecem polju onda ga pojede <--sta?
@@ -502,6 +512,14 @@ function clearGreen(fields) {
   }
 }
 
+function clearDisabled(fields) {
+  for (let i = 0; i < fields.length; i++) {
+    if (i !== fields.length - 1) {
+      fields[i].field.disabled = false;
+    }
+  }
+}
+
 function colorAvailableMove(beginningField, t, fields) {
   try {
     const index = beginningField.contains(t.token)
@@ -517,15 +535,34 @@ function colorAvailableMove(beginningField, t, fields) {
 }
 
 //Ovo pogledaj jos jedno 3, 4 puta
-//
 function takeCheck(fields, tokensToTake, index) {
   for (let t of tokensToTake) {
     if (fields[index].field.contains(t.token)) {
+      console.log(t.token.id);
       fields[index].field.disabled = false;
       return [t.token, true];
     }
   }
   return [null, false];
+}
+
+//Gledaj poziciju relativnu na token
+//Ovo gleda samu globalnu da kazem
+function occupiedCheck(fields, t, index, teammates) {
+  const tokenIndex =
+    typeof findTokenOnTileIndex(fields, t) == "undefined"
+      ? -1
+      : findTokenOnTileIndex(fields, t);
+
+  for (let other of teammates) {
+    if (other != t) {
+      if (fields[tokenIndex + rolledNumber].field.contains(other.token)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 //Utvrdi gdje je trenutni token ✓
@@ -650,7 +687,9 @@ function calculateOddOfTaking(fields, takerTokenArray, targetTokenArray) {
       console.log(
         "Probability to take via rosette: " + rosetteProbability + "%"
       );
-      console.log("Token id: " + tokenOnFieldId);
+      console.log("Taker id: " + tokenOnFieldId);
+      console.log("Target id: " + targetTokenIDArray[position]);
+
       console.log("Token index: " + tokenIndex);
 
       console.log(targetTokenIDArray);
@@ -658,7 +697,7 @@ function calculateOddOfTaking(fields, takerTokenArray, targetTokenArray) {
       console.log(targetTokenIndexArray);
 
       if (tokenIndex == -1) {
-        probabilityDisplay.innerHTML = `Value needeed to take token <strong>${targetTokenIDArray[position]}</strong> for tokens on start: " ${valueToTake} <br>`;
+        probabilityDisplay.innerHTML += `Value needeed to take token <strong>${targetTokenIDArray[position]}</strong> for token on start: " ${valueToTake} <br>`;
         probabilityDisplay.innerHTML += `Probability of direct taking token <strong>${
           targetTokenIDArray[position]
         }</strong> for tokens on start: " ${probabilityToTake * 100}% <br>`;
@@ -694,7 +733,7 @@ function probabilities(value) {
 }
 
 function takeViaRosette(i, tokenIndex, rosetteIndex_1, rosetteIndex_2) {
-  if (i > rosetteIndex_1 && i < rosetteIndex_2) {
+  if (i >= rosetteIndex_1 && i <= rosetteIndex_2) {
     if (tokenIndex < rosetteIndex_1) {
       const distanceToRosette = rosetteIndex_1 - tokenIndex;
       const probabilityToRosette = probabilities(distanceToRosette);
@@ -706,7 +745,7 @@ function takeViaRosette(i, tokenIndex, rosetteIndex_1, rosetteIndex_2) {
 
       return probabilityToRosette * probabilityFromRosetteToTarget * 100;
     }
-  } else if (i > rosetteIndex_2) {
+  } else if (i >= rosetteIndex_2) {
     if (tokenIndex < rosetteIndex_1) {
       const distanceTo1stRosette = rosetteIndex_1 - tokenIndex;
       const probabilityTo1stRosette = probabilities(distanceTo1stRosette);
@@ -724,7 +763,7 @@ function takeViaRosette(i, tokenIndex, rosetteIndex_1, rosetteIndex_2) {
         probabilityFrom2ndRosetteToTarget *
         100
       );
-    } else if (tokenIndex > rosetteIndex_1) {
+    } else if (tokenIndex >= rosetteIndex_1) {
       const distanceTo2ndRosette = rosetteIndex_2 - tokenIndex;
       const probabilityTo2ndRosette = probabilities(distanceTo2ndRosette);
 
@@ -752,3 +791,116 @@ Opet, ako se gleda koje je polje najbolje/najgore za uzimanje protivnickog token
 
 Ako nema protivnika na "nesigurnim", onda pici rendom
 */
+
+let counter = 0;
+function occupiedResolver(occupied, token, p2_tokens, fields_p2, index) {
+  return new Promise((resolve, reject) => {
+    console.log("TOKEN DIREKT IZ ULAZNOG PARAMETRA ");
+    console.log(token);
+
+    console.log("INDEKS DIREKT IZ ULAZNOG PARAMETRA " + index);
+    if (rolledNumber === 0) {
+      resolve(false);
+      return;
+    }
+
+    setTimeout(() => {
+      let tokenIndex =
+        typeof findTokenOnTileIndex(fields_p2, token) == "undefined"
+          ? -1
+          : findTokenOnTileIndex(fields_p2, token);
+      occupied = occupiedCheck(fields_p2, token, index, p2_tokens);
+
+      if (occupied) {
+        token = p2_tokens[counter].token;
+        tokenIndex =
+          typeof findTokenOnTileIndex(fields_p2, token) == "undefined"
+            ? -1
+            : findTokenOnTileIndex(fields_p2, token);
+
+        // if (tokenIndex <= index) {
+        counter++;
+        occupiedResolver(occupied, token, p2_tokens, fields_p2, index);
+        return;
+        //}
+      }
+      console.log("Occupied iz loop funkcije: " + occupied);
+      console.log("TOKEN INDEX IZ LOOPA " + tokenIndex);
+      console.log("INDEKS PLUS ROLOVANI BROJ: " + (tokenIndex + rolledNumber));
+      console.log("TOKEN U RESOLVEU LOOPA");
+      console.log(token);
+      console.log("\n\n\n");
+      counter = 0;
+      fields_p2[rolledNumber + tokenIndex].field.appendChild(token);
+      resolve(token);
+    }, 1000);
+  });
+}
+
+async function aiMove(
+  tokens,
+  fields,
+  beginningField,
+  opponentBeginingField,
+  opponentTokens
+) {
+  try {
+    roll_btn.click();
+    console.log("ROLLED NUMBER " + rolledNumber);
+
+    let token = tokens[Math.floor(Math.random() * tokens.length)].token;
+
+    token.disabled = false;
+    clearGreen(fields);
+    const index = beginningField.contains(token)
+      ? rolledNumber - 1
+      : findTokenOnTileIndex(fields, token) + rolledNumber;
+
+    let isOccupied = occupiedCheck(fields, token, index, tokens);
+
+    token = await occupiedResolver(isOccupied, token, tokens, fields, index);
+
+    if (fields[index].rosette) {
+      console.log("Jeste rozeta");
+      roll_btn.click();
+      whoseTurn.innerHTML = "white's";
+      //isP1sTurn = false;
+    }
+    if (index >= fields.length) {
+      console.log("Presisalo  ");
+      return;
+    }
+
+    //console.log(takeCheck(fields, p1_tokens, index));
+    const [tkn, isTaken] = takeCheck(fields, opponentTokens, index);
+
+    if (isTaken) {
+      opponentBeginingField.appendChild(tkn);
+    }
+
+    token.isClicked = false;
+
+    //isP1sTurn = true;
+    whoseTurn.innerHTML = "black's";
+    roll_display.innerHTML = "";
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function run() {
+  if (!isP1sTurn) {
+    aiMove(p2_tokens, fields_p2, beginingField_p2, beginingField_p1, p1_tokens);
+    isP1sTurn = true;
+  } else {
+    //aiMove(p1_tokens, fields, beginingField_p1, beginingField_p2, p2_tokens);
+    roll();
+    //isP1sTurn = false;
+  }
+
+  setTimeout(() => {
+    requestAnimationFrame(run);
+  }, 1000);
+}
+
+run();
