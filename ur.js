@@ -278,7 +278,7 @@ isP1sTurn
   ? (whoseTurn.innerHTML = "black's")
   : (whoseTurn.innerHTML = "white's");
 
-let rolledNumber = 0;
+let rolledNumber = -1;
 
 //Kad se roluje broj, samo moze da se ide do polja na koji pokazuje
 //Samim tim, for petlja ne treba, jer ne moze da se krece na vise od jednog polja po rolu
@@ -341,40 +341,42 @@ function roll() {
     roll_display.innerHTML = rolledNumber;
 
     if (rolledNumber === 0) {
-      isP1sTurn ? (isP1sTurn = false) : (isP1sTurn = true);
+      console.log("Nula rolovana");
+      isP1sTurn = !isP1sTurn;
       probabilityDisplay.innerHTML = "";
       return;
     }
 
-    // if (isP1sTurn) {
-    for (let t of p1_tokens) {
-      t.token.disabled = false;
-      clearGreen(fields_p2);
-      const index = beginingField_p1.contains(t.token)
-        ? rolledNumber - 1
-        : findTokenOnTileIndex(fields, t.token) + rolledNumber;
+    if (isP1sTurn) {
+      for (let t of p1_tokens) {
+        t.token.disabled = false;
+        clearGreen(fields_p2);
+        const index = beginingField_p1.contains(t.token)
+          ? rolledNumber - 1
+          : findTokenOnTileIndex(fields, t.token) + rolledNumber;
 
-      move(
-        rolledNumber,
-        fields,
-        t,
-        beginingField_p1,
-        index,
-        p2_tokens,
-        beginingField_p2,
-        p1_tokens
-      );
+        move(
+          rolledNumber,
+          fields,
+          t,
+          beginingField_p1,
+          index,
+          p2_tokens,
+          beginingField_p2,
+          p1_tokens
+        );
 
-      if (index >= fields.length) {
-        console.log("Presisalo  ");
-        return;
+        if (index >= fields.length) {
+          console.log("Presisalo  ");
+          return;
+        }
+        takeCheck(fields, p2_tokens, index);
+
+        //isP1sTurn = false;
+        t.isClicked = false;
       }
-      takeCheck(fields, p2_tokens, index);
-
-      //isP1sTurn = false;
-      t.isClicked = false;
+      //MAKNI KOMENTAR AKO OCES IGRAC PROTIV IGRACA
     }
-    //}
     // else {
     //   for (let t of p2_tokens) {
     //     t.token.disabled = false;
@@ -400,7 +402,7 @@ function roll() {
     //     }
     //     takeCheck(fields, p1_tokens, index);
 
-    //     isP1sTurn = true;
+    //     //isP1sTurn = true;
     //     t.isClicked = false;
     //   }
     // }
@@ -474,14 +476,14 @@ function move(
           ? (whoseTurn.innerHTML = "black's")
           : (whoseTurn.innerHTML = "white's");
 
-        roll_display.innerHTML = "";
         probabilityDisplay.innerHTML = "";
 
-        isP1sTurn = !isP1sTurn;
+        //OVO STAVI NA !isP1sTurn ako oces igrac protiv igraca
+        isP1sTurn = false;
       }
     });
   } catch (error) {
-    reject(error);
+    //reject(error);
     console.error(error);
   }
 }
@@ -598,6 +600,8 @@ function calculateOddOfTaking(fields, takerTokenArray, targetTokenArray) {
   const rosetteIndex_1 = 3;
   const rosetteIndex_2 = 7;
 
+  const tokensWithProbabilities = [];
+
   for (let t of takerTokenArray) {
     let rosetteProbability = 0;
     let valueToTake = 0;
@@ -628,55 +632,50 @@ function calculateOddOfTaking(fields, takerTokenArray, targetTokenArray) {
     for (let [position, index] of targetTokenIndexArray.entries()) {
       console.log("Target token index: " + index);
       if (tokenIndex > index) {
-        return;
+        continue;
       }
       valueToTake = index - tokenIndex;
       probabilityToTake = 0;
       switch (valueToTake) {
         case 1:
           probabilityToTake = _1probability;
-          rosetteProbability = takeViaRosette(
-            index,
-            tokenIndex,
-            rosetteIndex_1,
-            rosetteIndex_2
-          );
+          rosetteProbability = isFinite(
+            takeViaRosette(index, tokenIndex, rosetteIndex_1, rosetteIndex_2)
+          )
+            ? takeViaRosette(index, tokenIndex, rosetteIndex_1, rosetteIndex_2)
+            : 0;
           break;
         case 2:
           probabilityToTake = _2probability;
-          rosetteProbability = takeViaRosette(
-            index,
-            tokenIndex,
-            rosetteIndex_1,
-            rosetteIndex_2
-          );
+          rosetteProbability = isFinite(
+            takeViaRosette(index, tokenIndex, rosetteIndex_1, rosetteIndex_2)
+          )
+            ? takeViaRosette(index, tokenIndex, rosetteIndex_1, rosetteIndex_2)
+            : 0;
           break;
         case 3:
           probabilityToTake = _3probability;
-          rosetteProbability = takeViaRosette(
-            index,
-            tokenIndex,
-            rosetteIndex_1,
-            rosetteIndex_2
-          );
+          rosetteProbability = isFinite(
+            takeViaRosette(index, tokenIndex, rosetteIndex_1, rosetteIndex_2)
+          )
+            ? takeViaRosette(index, tokenIndex, rosetteIndex_1, rosetteIndex_2)
+            : 0;
           break;
         case 4:
           probabilityToTake = _4probability;
-          rosetteProbability = takeViaRosette(
-            index,
-            tokenIndex,
-            rosetteIndex_1,
-            rosetteIndex_2
-          );
+          rosetteProbability = isFinite(
+            takeViaRosette(index, tokenIndex, rosetteIndex_1, rosetteIndex_2)
+          )
+            ? takeViaRosette(index, tokenIndex, rosetteIndex_1, rosetteIndex_2)
+            : 0;
           break;
 
         default:
-          rosetteProbability = takeViaRosette(
-            index,
-            tokenIndex,
-            rosetteIndex_1,
-            rosetteIndex_2
-          );
+          rosetteProbability = isFinite(
+            takeViaRosette(index, tokenIndex, rosetteIndex_1, rosetteIndex_2)
+          )
+            ? takeViaRosette(index, tokenIndex, rosetteIndex_1, rosetteIndex_2)
+            : 0;
 
           break;
       }
@@ -711,8 +710,42 @@ function calculateOddOfTaking(fields, takerTokenArray, targetTokenArray) {
         }% <br>`;
         probabilityDisplay.innerHTML += `Probability of taking token <strong>${targetTokenIDArray[position]}</strong> via rosette for token with ID <strong>${tokenOnFieldId}</strong>: " ${rosetteProbability}%<br><br>`;
       }
+      tokensWithProbabilities.push({
+        token: t,
+        probability: rosetteProbability + probabilityToTake * 100,
+      });
+
+      console.log(tokensWithProbabilities);
     }
   }
+
+  console.log(tokensWithProbabilities);
+  if (tokensWithProbabilities.length === 0) {
+    return [null, null];
+  }
+  const highestProbabilityIndex = Object.keys(tokensWithProbabilities).reduce(
+    (a, b) =>
+      tokensWithProbabilities[a].probability >
+      tokensWithProbabilities[b].probability
+        ? a
+        : b
+  );
+  const lowestProbabilityIndex = Object.keys(tokensWithProbabilities).reduce(
+    (a, b) =>
+      tokensWithProbabilities[a].probability <
+      tokensWithProbabilities[b].probability
+        ? a
+        : b
+  );
+
+  console.log(highestProbabilityIndex);
+  console.log(lowestProbabilityIndex);
+  console.log(tokensWithProbabilities[highestProbabilityIndex].token.token);
+
+  return [
+    tokensWithProbabilities[highestProbabilityIndex].token.token,
+    tokensWithProbabilities[lowestProbabilityIndex].token.token,
+  ];
 }
 
 function probabilities(value) {
@@ -842,56 +875,89 @@ async function aiMove(
   fields,
   beginningField,
   opponentBeginingField,
-  opponentTokens
+  opponentTokens,
+  AItype
 ) {
-  try {
-    roll_btn.click();
-    console.log("ROLLED NUMBER " + rolledNumber);
+  roll_btn.click();
+  console.log("ROLLED NUMBER " + rolledNumber);
 
-    let token = tokens[Math.floor(Math.random() * tokens.length)].token;
+  console.log("ODD OF TAKING TOKENS");
+  console.log(calculateOddOfTaking(fields, tokens, opponentTokens));
 
-    token.disabled = false;
-    clearGreen(fields);
-    const index = beginningField.contains(token)
-      ? rolledNumber - 1
-      : findTokenOnTileIndex(fields, token) + rolledNumber;
+  let [tokenWithHighestTakeProbability, tokenWithLowestTakeProbability] =
+    calculateOddOfTaking(fields, tokens, opponentTokens);
 
-    let isOccupied = occupiedCheck(fields, token, index, tokens);
+  console.log("TOKEN ZDERAC");
+  console.log(tokenWithHighestTakeProbability);
 
-    token = await occupiedResolver(isOccupied, token, tokens, fields, index);
+  let token = tokens[Math.floor(Math.random() * tokens.length)].token;
 
-    if (fields[index].rosette) {
-      console.log("Jeste rozeta");
-      roll_btn.click();
-      whoseTurn.innerHTML = "white's";
-      //isP1sTurn = false;
-    }
-    if (index >= fields.length) {
-      console.log("Presisalo  ");
-      return;
-    }
-
-    //console.log(takeCheck(fields, p1_tokens, index));
-    const [tkn, isTaken] = takeCheck(fields, opponentTokens, index);
-
-    if (isTaken) {
-      opponentBeginingField.appendChild(tkn);
-    }
-
-    token.isClicked = false;
-
-    //isP1sTurn = true;
-    whoseTurn.innerHTML = "black's";
-    roll_display.innerHTML = "";
-  } catch (error) {
-    console.error(error);
+  switch (AItype) {
+    case "aggresive":
+      token =
+        tokenWithHighestTakeProbability === null
+          ? tokens[Math.floor(Math.random() * tokens.length)].token
+          : tokenWithHighestTakeProbability;
+      break;
+    case "random":
+      token = tokens[Math.floor(Math.random() * tokens.length)].token;
+      break;
+    case "pacifist":
+      token =
+        tokenWithLowestTakeProbability === null
+          ? tokens[Math.floor(Math.random() * tokens.length)].token
+          : tokenWithLowestTakeProbability;
+      break;
+    default:
+      break;
   }
+
+  token.disabled = false;
+  clearGreen(fields);
+  const index = beginningField.contains(token)
+    ? rolledNumber - 1
+    : findTokenOnTileIndex(fields, token) + rolledNumber;
+
+  let isOccupied = occupiedCheck(fields, token, index, tokens);
+
+  token = await occupiedResolver(isOccupied, token, tokens, fields, index);
+  console.log("Posle occupied resolvera");
+  const takerIndex = findTokenOnTileIndex(fields, token);
+
+  console.log(takeCheck(fields, opponentTokens, takerIndex));
+  const [tkn, isTaken] = takeCheck(fields, opponentTokens, takerIndex);
+
+  if (isTaken) {
+    opponentBeginingField.appendChild(tkn);
+  }
+
+  if (fields[index].rosette) {
+    console.log("Jeste rozeta");
+    roll_btn.click();
+    whoseTurn.innerHTML = "white's";
+    //isP1sTurn = false;
+  }
+  if (index >= fields.length) {
+    console.log("Presisalo  ");
+    return;
+  }
+
+  token.isClicked = false;
+
+  isP1sTurn = true;
+  whoseTurn.innerHTML = "black's";
 }
 
 function run() {
   if (!isP1sTurn) {
-    aiMove(p2_tokens, fields_p2, beginingField_p2, beginingField_p1, p1_tokens);
-    isP1sTurn = true;
+    aiMove(
+      p2_tokens,
+      fields_p2,
+      beginingField_p2,
+      beginingField_p1,
+      p1_tokens,
+      "aggresive"
+    );
   } else {
     //aiMove(p1_tokens, fields, beginingField_p1, beginingField_p2, p2_tokens);
     roll();
